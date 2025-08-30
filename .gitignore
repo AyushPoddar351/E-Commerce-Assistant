@@ -9,3 +9,6 @@ wheels/
 # Virtual environments
 venv
 ecomm-prod-assistant
+notes
+
+.env
