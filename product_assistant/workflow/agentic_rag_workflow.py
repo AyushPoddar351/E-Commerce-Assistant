@@ -8,6 +8,7 @@ from langgraph.graph.message import add_messages
 from prompt_library.prompts import PROMPT_REGISTRY, PromptType
 from retriever.retrieval import Retriever
 from utils.model_loader import ModelLoader
+from langgraph.checkpoint.memory import MemorySaver
 
 
 class AgenticRAG:
@@ -20,8 +21,9 @@ class AgenticRAG:
         self.retriever_obj = Retriever()
         self.model_loader = ModelLoader()
         self.llm = self.model_loader.load_llm()
+        self.checkpointer = MemorySaver()
         self.workflow = self._build_workflow()
-        self.app = self.workflow.compile()
+        self.app = self.workflow.compile(checkpointer=self.checkpointer)
 
     # ---------- Helpers ----------
     def _format_docs(self, docs) -> str:
@@ -120,25 +122,22 @@ class AgenticRAG:
         return workflow
 
     # ---------- Public Run ----------
-    def run(self, query: str) -> str:
+    def run(self, query: str,thread_id: str = "default_thread") -> str:
         """Run the workflow for a given query and return the final answer."""
-        result = self.app.invoke({"messages": [HumanMessage(content=query)]})
+        result = self.app.invoke({"messages": [HumanMessage(content=query)]},
+                                 config={"configurable": {"thread_id": thread_id}})
         return result["messages"][-1].content
-
-    # def save_graph_image(self, filename="workflow.png"):
-    #     """Save workflow graph as PNG image."""
-    #     try:
-    #         img = self.app.get_graph().draw_mermaid_png()
-    #         with open(filename, "wb") as f:
-    #             f.write(img)
-    #         print(f"Graph saved as {filename}")
-    #     except Exception as e:
-    #         print(f"Error: {e}")
-    #         print("Install: pip install pygraphviz")
+    
+        # function call with be asscoiate
+        # you will get some score
+        # put condition behalf on that score
+        # if relevany>0.75
+            #return
+        #else:
+            #contine
 
 
 if __name__ == "__main__":
     rag_agent = AgenticRAG()
-    # rag_agent.save_graph_image("E:\data\courses\krish naik\LLMOPS LIVE\E-Com-Bot\SS\my_workflow.png")
-    answer = rag_agent.run("What is the price of Samsung s24?")
+    answer = rag_agent.run("What is the price of iPhone 15?")
     print("\nFinal Answer:\n", answer)
